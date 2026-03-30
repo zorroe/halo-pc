@@ -1,31 +1,20 @@
-// 音乐 API - 通过 Vite 代理转发到后端服务
-const API = ''
-
-async function request(path: string, data: Record<string, any> = {}) {
-  const res = await fetch(`${API}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  return res.json()
-}
+import { saveCookie, clearCookie, request } from './request'
 
 // 发送验证码
 export async function sendCaptcha(phone: string) {
   return request('/captcha/sent', { phone, ctcode: 86 })
 }
 
-// 手机号 + 密码登录
-export async function loginWithPassword(phone: string, password: string) {
-  return request('/login/cellphone', { phone, password, countrycode: 86 })
-}
-
-// 手机号 + 验证码登录（需先验证 captcha）
+// 手机号 + 验证码登录
 export async function loginWithCaptcha(phone: string, captcha: string) {
-  // 先验证验证码（服务端会校验）
   await request('/captcha/verify', { phone, captcha, ctcode: 86 })
-  // 验证通过后再登录
-  return request('/login/cellphone', { phone, captcha, countrycode: 86 })
+  const res = await request('/login/cellphone', { phone, captcha, countrycode: 86 })
+  // 登录成功时 result.cookie 字段里有 cookie
+  if (res.code === 200 && res.cookie) {
+    const cookieStr = Array.isArray(res.cookie) ? res.cookie.join(';') : res.cookie
+    saveCookie(cookieStr)
+  }
+  return res
 }
 
 // 获取二维码 key
@@ -50,5 +39,6 @@ export async function getLoginStatus() {
 
 // 退出登录
 export async function logout() {
+  clearCookie()
   return request('/logout', {})
 }

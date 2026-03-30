@@ -1,14 +1,5 @@
-// 首页 API
-const API = ''
-
-async function request(path: string, data: Record<string, any> = {}) {
-  const res = await fetch(`${API}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  return res.json()
-}
+// 首页 API - 使用带 cookie 的 request
+import { request } from './request'
 
 // 个性推荐（ banners + 推荐歌单）
 export async function getPersonalized() {
