@@ -1,0 +1,51 @@
+// 音乐 API - PC 端直连本地 Docker API 服务
+const API = 'http://localhost:19876'
+
+async function request(path: string, data: Record<string, any> = {}) {
+  const res = await fetch(`${API}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
+// 发送验证码
+export async function sendCaptcha(phone: string) {
+  return request('/sms/captcha/sent', { phone, ctcode: 86 })
+}
+
+// 手机号 + 密码登录
+export async function loginWithPassword(phone: string, password: string) {
+  return request('/login/cellphone', { phone, password, countrycode: 86 })
+}
+
+// 手机号 + 验证码登录
+export async function loginWithCaptcha(phone: string, captcha: string) {
+  return request('/login/cellphone', { phone, captcha, countrycode: 86 })
+}
+
+// 获取二维码 key
+export async function getQrKey() {
+  return request('/login/qr/key')
+}
+
+// 生成二维码图片
+export async function getQrImage(key: string) {
+  return request('/login/qr/create', { key, qrimg: true })
+}
+
+// 检查二维码扫码状态
+export async function checkQrStatus(key: string) {
+  return request('/login/qr/check', { key })
+}
+
+// 获取登录状态
+export async function getLoginStatus() {
+  return request('/login/status', {})
+}
+
+// 退出登录
+export async function logout() {
+  return request('/logout', {})
+}
