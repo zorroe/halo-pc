@@ -33,7 +33,7 @@ export async function request(
     headers['Content-Type'] = 'application/json'
   }
 
-  console.log(`[API] ${method} ${url}`, data)
+  console.log(`[API] ${method} ${url}`, method === 'POST' ? data : '')
 
   const res = await fetch(url, {
     method,
