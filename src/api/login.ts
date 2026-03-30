@@ -20,8 +20,11 @@ export async function loginWithPassword(phone: string, password: string) {
   return request('/login/cellphone', { phone, password, countrycode: 86 })
 }
 
-// 手机号 + 验证码登录
+// 手机号 + 验证码登录（需先验证 captcha）
 export async function loginWithCaptcha(phone: string, captcha: string) {
+  // 先验证验证码（服务端会校验）
+  await request('/captcha/verify', { phone, captcha, ctcode: 86 })
+  // 验证通过后再登录
   return request('/login/cellphone', { phone, captcha, countrycode: 86 })
 }
 
