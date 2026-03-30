@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import Login from './components/Login.vue'
 import Home from './components/Home.vue'
 import { isLoggedIn, checkLoginStatus } from './composables/useLogin'
@@ -17,6 +17,11 @@ onMounted(async () => {
     dark.value = true
     document.documentElement.classList.add('dark')
   }
+})
+
+// 监听登录状态变化，自动跳转
+watch(isLoggedIn, (val) => {
+  if (val) view.value = 'home'
 })
 
 function handleLoginSuccess() {
