@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { getLoginStatus } from '../api/login'
+import { saveCookie } from '../api/request'
 
 export interface UserInfo {
   id: number
@@ -27,9 +28,13 @@ export async function checkLoginStatus() {
   return false
 }
 
-export function setLogin(profile: any) {
+export function setLogin(profile: any, cookie?: string) {
   userInfo.value = profile
   isLoggedIn.value = true
+  if (cookie) {
+    const cookieStr = Array.isArray(cookie) ? cookie.join(';') : cookie
+    saveCookie(cookieStr)
+  }
 }
 
 export function clearLogin() {

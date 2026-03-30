@@ -83,8 +83,8 @@ async function startQrLogin() {
     }
     qrKey.value = keyRes.data.unikey
     const imgRes = await getQrImage(qrKey.value)
-    if (imgRes.qrimg) {
-      qrImageUrl.value = imgRes.qrimg
+    if (imgRes.data?.qrimg) {
+      qrImageUrl.value = imgRes.data.qrimg
       qrStatusText.value = '请打开网易云音乐 App 扫码'
       startQrPolling()
     } else {
@@ -108,7 +108,7 @@ function startQrPolling() {
         clearInterval(qrPoller!)
         qrPoller = null
         setTimeout(() => {
-          if (res.profile) setLogin(res.profile)
+          if (res.profile) setLogin(res.profile, res.cookie)
           emit('login-success')
         }, 500)
       } else if (code === 800) {
