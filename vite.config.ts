@@ -15,6 +15,10 @@ export default defineConfig({
         target: 'http://192.168.1.101:19876',
         changeOrigin: true,
       },
+      '/captcha': {
+        target: 'http://192.168.1.101:19876',
+        changeOrigin: true,
+      },
       '/logout': {
         target: 'http://192.168.1.101:19876',
         changeOrigin: true,

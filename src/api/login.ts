@@ -1,5 +1,5 @@
-// 音乐 API - PC 端直连本地 Docker API 服务
-const API = 'http://localhost:19876'
+// 音乐 API - 通过 Vite 代理转发到后端服务
+const API = ''
 
 async function request(path: string, data: Record<string, any> = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -12,7 +12,7 @@ async function request(path: string, data: Record<string, any> = {}) {
 
 // 发送验证码
 export async function sendCaptcha(phone: string) {
-  return request('/sms/captcha/sent', { phone, ctcode: 86 })
+  return request('/captcha/sent', { phone, ctcode: 86 })
 }
 
 // 手机号 + 密码登录
