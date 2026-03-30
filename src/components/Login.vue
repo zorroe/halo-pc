@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { loginWithCaptcha, sendCaptcha, getQrKey, getQrImage, checkQrStatus } from '../api/login'
 import { setLogin } from '../composables/useLogin'
 
-const emit = defineEmits<{ (e: 'login-success'): void }>()
+const router = useRouter()
 
 type Tab = 'captcha' | 'qr'
 const activeTab = ref<Tab>('captcha')
@@ -61,7 +62,7 @@ async function handleCaptchaLogin() {
     const res = await loginWithCaptcha(phone.value, captcha.value)
     if (res.code === 200) {
       setLogin(res.profile)
-      emit('login-success')
+      router.push('/home')
     } else {
       errorMsg.value = res.msg || `登录失败 (${res.code})`
     }
@@ -90,8 +91,8 @@ async function startQrLogin() {
     } else {
       qrStatusText.value = '生成失败，请重试'
     }
-  } catch (e) {
-    qrStatusText.value = '网络错误，请检查 API 服务'
+  } catch (e: any) {
+    qrStatusText.value = e?.message || '网络错误，请检查 API 服务'
   }
   qrLoading.value = false
 }
@@ -109,7 +110,7 @@ function startQrPolling() {
         qrPoller = null
         setTimeout(() => {
           if (res.profile) setLogin(res.profile, res.cookie)
-          emit('login-success')
+          router.push('/home')
         }, 500)
       } else if (code === 800) {
         qrStatusText.value = '⏰ 二维码已过期，请重新生成'

@@ -13,16 +13,36 @@ export function clearCookie() {
   localStorage.removeItem(COOKIE_KEY)
 }
 
-export async function request(path: string, data: Record<string, any> = {}) {
+export async function request(
+  path: string,
+  data: Record<string, any> = {},
+  method: 'GET' | 'POST' = 'POST'
+) {
   const cookie = getCookie()
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const headers: Record<string, string> = {}
   if (cookie) headers['Cookie'] = cookie
 
-  const res = await fetch(`${path}`, {
-    method: 'POST',
+  // GET 请求用 query 参数，POST 请求用 JSON body
+  let url = path
+  if (method === 'GET' && Object.keys(data).length > 0) {
+    const params = new URLSearchParams(
+      Object.entries(data).map(([k, v]) => [k, String(v)])
+    )
+    url += '?' + params.toString()
+  } else if (method === 'POST') {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  console.log(`[API] ${method} ${url}`, data)
+
+  const res = await fetch(url, {
+    method,
     headers,
-    body: JSON.stringify(data),
+    ...(method === 'POST' ? { body: JSON.stringify(data) } : {}),
   })
+
+  const json = await res.json()
+  console.log(`[API] response ${path}:`, json)
 
   // 如果响应头里有 set-cookie，保存起来
   const sc = res.headers.get('set-cookie')
@@ -31,5 +51,5 @@ export async function request(path: string, data: Record<string, any> = {}) {
     saveCookie(cookieStr)
   }
 
-  return res.json()
+  return json
 }

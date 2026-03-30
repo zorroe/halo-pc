@@ -24,12 +24,12 @@ export async function getQrKey() {
 
 // 生成二维码图片
 export async function getQrImage(key: string) {
-  return request('/login/qr/create', { key, qrimg: true })
+  return request('/login/qr/create', { key, qrimg: 1 })
 }
 
 // 检查二维码扫码状态
-export async function checkQrStatus(key: string) {
-  return request('/login/qr/check', { key })
+export async function checkQrStatus(unikey: string) {
+  return request('/login/qr/check', { unikey })
 }
 
 // 获取登录状态
