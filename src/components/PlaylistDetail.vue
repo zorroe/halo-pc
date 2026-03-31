@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlaylistDetail, getPlaylistTracks, subscribePlaylist } from '../api/home'
 import { useUserStore } from '../stores/user'
@@ -14,27 +14,70 @@ const tracks = ref<any[]>([])
 const subscribed = ref(false)
 const subscribLoading = ref(false)
 
+// 分页
+const PAGE_SIZE = 30
+const currentPage = ref(1)
+const totalTracks = ref(0)
+const loadingMore = ref(false)
+
+const totalPages = computed(() => Math.ceil(totalTracks.value / PAGE_SIZE))
+
 const playlistId = Number(route.params.id)
 
 onMounted(async () => {
-  try {
-    const [detailRes, trackRes] = await Promise.all([
-      getPlaylistDetail(playlistId),
-      getPlaylistTracks(playlistId, 100),
-    ])
+  await loadPlaylist()
+  await loadTracks(1)
+  loading.value = false
+})
 
+async function loadPlaylist() {
+  try {
+    const detailRes = await getPlaylistDetail(playlistId)
     if (detailRes.code === 200) {
       playlist.value = detailRes.playlist
       subscribed.value = detailRes.playlist.subscribed
-    }
-    if (trackRes.code === 200) {
-      tracks.value = trackRes.songs || []
+      totalTracks.value = detailRes.playlist.trackCount || 0
     }
   } catch (e) {
     console.error('Load playlist failed:', e)
   }
+}
+
+async function loadTracks(page: number) {
+  if (page === 1) {
+    loading.value = true
+  } else {
+    loadingMore.value = true
+  }
+  currentPage.value = page
+  try {
+    const offset = (page - 1) * PAGE_SIZE
+    const res = await getPlaylistTracks(playlistId, PAGE_SIZE, offset)
+    if (res.code === 200) {
+      if (page === 1) {
+        tracks.value = res.songs || []
+      } else {
+        tracks.value = [...tracks.value, ...(res.songs || [])]
+      }
+    }
+  } catch (e) {
+    console.error('Load tracks failed:', e)
+  }
   loading.value = false
-})
+  loadingMore.value = false
+}
+
+async function prevPage() {
+  if (currentPage.value > 1) {
+    await loadTracks(currentPage.value - 1)
+  }
+}
+
+async function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    await loadTracks(currentPage.value + 1)
+  }
+}
 
 async function toggleSubscribe() {
   if (!userStore.isLoggedIn) {
@@ -106,7 +149,7 @@ function formatDuration(ms: number) {
 
           <!-- Stats -->
           <div class="flex gap-6 text-sm text-slate-400 mb-4">
-            <span>歌曲 {{ playlist.trackCount }}</span>
+            <span>歌曲 {{ formatCount(totalTracks) }}</span>
             <span>播放 {{ formatCount(playlist.playCount) }} 次</span>
             <span>收藏 {{ formatCount(playlist.subscribedCount) }}</span>
           </div>
@@ -136,7 +179,39 @@ function formatDuration(ms: number) {
 
       <!-- Song List -->
       <div>
-        <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4">歌曲列表</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200">歌曲列表</h2>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="flex items-center gap-3 text-sm">
+            <span class="text-slate-400">
+              {{ (currentPage - 1) * PAGE_SIZE + 1 }}-{{ Math.min(currentPage * PAGE_SIZE, totalTracks) }} / {{ totalTracks }}
+            </span>
+            <div class="flex items-center gap-1">
+              <button
+                :disabled="currentPage === 1 || loadingMore"
+                class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                @click="prevPage"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <span class="px-2 text-slate-600 dark:text-slate-300 min-w-[3rem] text-center">{{ currentPage }} / {{ totalPages }}</span>
+              <button
+                :disabled="currentPage === totalPages || loadingMore"
+                class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                @click="nextPage"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading more indicator -->
+        <div v-if="loadingMore" class="flex items-center justify-center py-4 mb-2">
+          <div class="w-6 h-6 border-2 border-slate-200 border-t-rose-400 rounded-full animate-spin"></div>
+        </div>
+
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
           <table class="w-full">
             <thead>
@@ -154,7 +229,9 @@ function formatDuration(ms: number) {
                 :key="s.id"
                 class="group border-b border-slate-50 dark:border-slate-800 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <td class="py-3.5 px-5 text-sm text-slate-300 dark:text-slate-600 group-hover:text-rose-400 transition-colors">{{ i + 1 }}</td>
+                <td class="py-3.5 px-5 text-sm text-slate-300 dark:text-slate-600 group-hover:text-rose-400 transition-colors">
+                  {{ (currentPage - 1) * PAGE_SIZE + i + 1 }}
+                </td>
                 <td class="py-3.5 px-2">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-sm">
