@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { isLoggedIn, checkLoginStatus, userInfo } from './composables/useLogin'
+import { useUserStore } from './stores/user'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 const ready = ref(false)
 const dark = ref(false)
 
 const showHeader = computed(() => route.path !== '/login')
 
 onMounted(async () => {
-  await checkLoginStatus()
+  await userStore.checkLoginStatus()
   ready.value = true
-  if (isLoggedIn.value) {
+  if (userStore.isLoggedIn) {
     router.push('/home')
   }
 })
 
-// 仅在 ready 后且 isLoggedIn 变为 true 时跳转，避免初始 mount 时的无效触发
-watch([() => isLoggedIn.value, ready], ([loggedIn, rdy]) => {
+watch([() => userStore.isLoggedIn, ready], ([loggedIn, rdy]) => {
   if (rdy && loggedIn && route.path === '/login') {
     router.push('/home')
   }
@@ -67,9 +67,9 @@ function toggleDark() {
               >
                 <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-transparent group-hover:border-rose-300 dark:group-hover:border-rose-500 transition-all duration-200 shadow-sm bg-slate-200 dark:bg-slate-700">
                   <img
-                    v-if="userInfo?.avatarUrl"
-                    :src="userInfo.avatarUrl"
-                    :alt="userInfo.nickname"
+                    v-if="userStore.userInfo?.avatarUrl"
+                    :src="userStore.userInfo.avatarUrl"
+                    :alt="userStore.userInfo.nickname"
                     class="w-full h-full object-cover"
                   />
                 </div>

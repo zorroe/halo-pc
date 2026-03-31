@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { userInfo, checkLoginStatus } from '../composables/useLogin'
+import { useUserStore } from '../stores/user'
 import { logout } from '../api/login'
 import { getLikeList, getUserPlaylist } from '../api/home'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(true)
 const likeSongs = ref<any[]>([])
@@ -14,14 +15,14 @@ const likedPlaylists = ref<any[]>([])
 
 onMounted(async () => {
   // 先获取登录状态（防止刷新后 userInfo 为空）
-  await checkLoginStatus()
+  await userStore.checkLoginStatus()
 
-  if (!userInfo.value?.id) {
+  if (!userStore.userInfo?.id) {
     router.push('/login')
     return
   }
 
-  const uid = userInfo.value.id
+  const uid = userStore.userInfo.id
   try {
     const [likeRes, playlistRes] = await Promise.all([
       getLikeList(uid),
@@ -43,13 +44,13 @@ onMounted(async () => {
 })
 
 const genderText = () => {
-  if (userInfo.value?.gender === 1) return '男'
-  if (userInfo.value?.gender === 2) return '女'
+  if (userStore.userInfo?.gender === 1) return '男'
+  if (userStore.userInfo?.gender === 2) return '女'
   return '未知'
 }
 
 const birthdayText = () => {
-  const ts = userInfo.value?.birthday
+  const ts = userStore.userInfo?.birthday
   if (!ts) return '未设置'
   const d = new Date(ts)
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
@@ -57,6 +58,7 @@ const birthdayText = () => {
 
 async function handleLogout() {
   try { await logout() } catch (e) { /* ignore */ }
+  userStore.clearLogin()
   router.push('/login')
 }
 
@@ -100,9 +102,9 @@ function formatDuration(ms: number) {
         <!-- Avatar -->
         <div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800 flex-shrink-0">
           <img
-            v-if="userInfo?.avatarUrl"
-            :src="userInfo.avatarUrl"
-            :alt="userInfo.nickname"
+            v-if="userStore.userInfo?.avatarUrl"
+            :src="userStore.userInfo.avatarUrl"
+            :alt="userStore.userInfo.nickname"
             class="w-full h-full object-cover"
           />
           <div v-else class="w-full h-full flex items-center justify-center text-slate-400 text-2xl">?</div>
@@ -111,23 +113,23 @@ function formatDuration(ms: number) {
         <!-- Info -->
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-1">
-            <h1 class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userInfo?.nickname || '未登录' }}</h1>
-            <span class="text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Lv.{{ userInfo?.level || '-' }}</span>
+            <h1 class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.nickname || '未登录' }}</h1>
+            <span class="text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Lv.{{ userStore.userInfo?.level || '-' }}</span>
           </div>
-          <p v-if="userInfo?.signature" class="text-sm text-slate-400 mt-2 leading-relaxed">{{ userInfo.signature }}</p>
+          <p v-if="userStore.userInfo?.signature" class="text-sm text-slate-400 mt-2 leading-relaxed">{{ userStore.userInfo.signature }}</p>
 
           <!-- Stats -->
           <div class="flex gap-10 mt-5">
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userInfo?.follows || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.follows || 0 }}</p>
               <p class="text-sm text-slate-400">关注</p>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userInfo?.followeds || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.followeds || 0 }}</p>
               <p class="text-sm text-slate-400">粉丝</p>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userInfo?.playlistCount || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.playlistCount || 0 }}</p>
               <p class="text-sm text-slate-400">歌单</p>
             </div>
           </div>
@@ -145,7 +147,7 @@ function formatDuration(ms: number) {
           </div>
           <div>
             <span class="text-slate-400">地区</span>
-            <span class="ml-3 text-slate-700 dark:text-slate-200">{{ userInfo?.province || '-' }} · {{ userInfo?.city || '-' }}</span>
+            <span class="ml-3 text-slate-700 dark:text-slate-200">{{ userStore.userInfo?.province || '-' }} · {{ userStore.userInfo?.city || '-' }}</span>
           </div>
           <div class="pt-2">
             <button

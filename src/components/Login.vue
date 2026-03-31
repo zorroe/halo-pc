@@ -2,7 +2,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getQrKey, getQrImage, checkQrStatus } from '../api/login'
-import { setLogin } from '../composables/useLogin'
+import { useUserStore } from '../stores/user'
+
+const userStore = useUserStore()
 
 const router = useRouter()
 
@@ -55,7 +57,7 @@ function startQrPolling() {
         qrStatusText.value = '登录成功'
         stopQrPolling() // 立即停止轮询，防止重复触发
         // profile 可能不在响应里，cookie 一定在，都存入
-        setLogin(res.profile || {}, res.cookie)
+        userStore.setLogin(res.profile || {}, res.cookie)
         // 短暂展示成功后跳转
         setTimeout(() => {
           router.push('/home')
