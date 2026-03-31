@@ -24,10 +24,16 @@ export async function getTopSong() {
 // 用户喜欢的歌曲列表（先查 ID，再批量查详情）
 export async function getLikeList(uid: number) {
   const res = await request('/likelist', { uid }) as any
-  if (res.code !== 200 || !res.data?.length) return { code: 200, songs: [] }
+  console.log('[getLikeList] /likelist response:', res)
+  if (res.code !== 200 || !res.data?.length) {
+    console.log('[getLikeList] no data, returning empty')
+    return { code: 200, songs: [] }
+  }
   // 批量查询歌曲详情（最多 100 首）
   const ids = res.data.slice(0, 100).join(',')
+  console.log('[getLikeList] fetching song details for ids:', ids)
   const detailRes = await request('/song/detail', { ids }) as any
+  console.log('[getLikeList] /song/detail response:', detailRes)
   return { code: 200, songs: detailRes.songs || [] }
 }
 
