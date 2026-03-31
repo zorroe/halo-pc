@@ -84,42 +84,41 @@ function stopQrPolling() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-stone-100 dark:from-slate-900 dark:to-stone-900 px-4">
-    <div class="w-full max-w-xs text-center">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-stone-100 dark:from-slate-900 dark:to-stone-900">
+    <div class="flex items-center gap-16">
 
-      <!-- Logo -->
-      <div class="mb-10">
-        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center mb-4 shadow-lg shadow-rose-200 dark:shadow-rose-900/30">
-          <span class="text-2xl text-white">♪</span>
-        </div>
-        <h1 class="text-2xl font-semibold text-slate-800 dark:text-white tracking-tight">HaloMusic</h1>
-        <p class="text-sm text-slate-400 mt-1">扫码登录，畅享音乐</p>
-      </div>
-
-      <!-- Card -->
-      <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-2xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200/50 dark:border-slate-700/50">
-
-        <!-- 二维码区 -->
-        <div class="flex flex-col items-center">
-          <div
-            class="w-44 h-44 rounded-xl bg-white flex items-center justify-center mb-5 border border-slate-100 dark:border-slate-700 cursor-pointer overflow-hidden hover:shadow-md transition-shadow duration-300"
-            @click="qrImageUrl ? '' : startQrLogin()"
-          >
-            <img v-if="qrImageUrl" :src="qrImageUrl" alt="QR Code" class="w-full h-full object-contain p-2" />
-            <div v-else-if="qrLoading" class="flex flex-col items-center gap-2">
-              <div class="w-6 h-6 border-2 border-slate-300 border-t-rose-400 rounded-full animate-spin"></div>
-              <span class="text-xs text-slate-400">生成中</span>
-            </div>
-            <div v-else class="text-xs text-slate-400">点击刷新</div>
+      <!-- Left: Branding -->
+      <div class="hidden lg:block">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-200 dark:shadow-rose-900/30">
+            <span class="text-3xl text-white font-bold">♪</span>
           </div>
-          <p class="text-sm text-slate-500 dark:text-slate-400">{{ qrStatusText }}</p>
+          <span class="text-3xl font-semibold text-slate-800 dark:text-white tracking-tight">HaloMusic</span>
         </div>
-
+        <p class="text-lg text-slate-400 leading-relaxed">海量高品质音乐<br/>畅享沉浸式聆听体验</p>
       </div>
 
-      <p class="text-xs text-slate-300 dark:text-slate-600 mt-8">
-        登录即表示同意用户协议
-      </p>
+      <!-- Right: Login Card -->
+      <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-2xl p-10 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-center">
+        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">扫码登录</h2>
+        <p class="text-sm text-slate-400 mb-8">使用网易云音乐 App 扫描二维码</p>
+
+        <!-- QR Code -->
+        <div
+          class="w-52 h-52 mx-auto rounded-xl bg-white border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-5 cursor-pointer hover:shadow-md transition-shadow duration-300 overflow-hidden"
+          @click="qrImageUrl ? '' : startQrLogin()"
+        >
+          <img v-if="qrImageUrl" :src="qrImageUrl" alt="QR Code" class="w-full h-full object-contain p-3" />
+          <div v-else-if="qrLoading" class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 border-2 border-slate-300 border-t-rose-400 rounded-full animate-spin"></div>
+            <span class="text-xs text-slate-400">生成中</span>
+          </div>
+          <span v-else class="text-xs text-slate-400">点击刷新</span>
+        </div>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400">{{ qrStatusText }}</p>
+      </div>
+
     </div>
   </div>
 </template>

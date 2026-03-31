@@ -22,33 +22,32 @@ function goToProfile() {
 
     <!-- Header -->
     <header class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60">
-      <div class="max-w-6xl mx-auto px-5 sm:px-6">
+      <div class="max-w-7xl mx-auto px-8">
         <div class="flex items-center justify-between h-14">
           <!-- Logo -->
           <div class="flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm shadow-rose-200 dark:shadow-rose-900/40">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm shadow-rose-200 dark:shadow-rose-900/40">
               <span class="text-white text-sm font-bold">♪</span>
             </div>
-            <span class="text-base font-semibold text-slate-800 dark:text-white tracking-tight">HaloMusic</span>
+            <span class="text-lg font-semibold text-slate-800 dark:text-white tracking-tight">HaloMusic</span>
           </div>
 
           <!-- Right actions -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-2">
             <!-- Avatar -->
             <button
-              class="w-8 h-8 rounded-full overflow-hidden border-2 border-transparent hover:border-rose-300 dark:hover:border-rose-500 transition-all duration-200 shadow-sm"
-              :title="userInfo?.nickname || '个人中心'"
+              class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 group"
               @click="goToProfile"
             >
-              <img
-                v-if="userInfo?.avatarUrl"
-                :src="userInfo.avatarUrl"
-                :alt="userInfo.nickname"
-                class="w-full h-full object-cover"
-              />
-              <div v-else class="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                <span class="text-xs text-slate-400">?</span>
+              <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-transparent group-hover:border-rose-300 dark:group-hover:border-rose-500 transition-all duration-200 shadow-sm bg-slate-200 dark:bg-slate-700">
+                <img
+                  v-if="userInfo?.avatarUrl"
+                  :src="userInfo.avatarUrl"
+                  :alt="userInfo.nickname"
+                  class="w-full h-full object-cover"
+                />
               </div>
+              <span class="text-sm text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">{{ userInfo?.nickname || '未登录' }}</span>
             </button>
 
             <!-- Theme toggle -->
@@ -66,7 +65,7 @@ function goToProfile() {
     </header>
 
     <!-- Content -->
-    <main class="max-w-6xl mx-auto px-5 sm:px-6 py-6">
+    <main class="max-w-7xl mx-auto px-8 py-8">
       <Home />
     </main>
 
