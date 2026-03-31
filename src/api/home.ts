@@ -40,7 +40,22 @@ export async function getSongDetail(ids: number[]) {
   return request('/song/detail', { ids: idsStr })
 }
 
-// 用户的所有歌单（可按 type 区分：0=全部, 1=创建, 2=收藏）
-export async function getUserPlaylist(uid: number, type = 0) {
-  return request('/user/playlist', { uid, type })
+// 用户的所有歌单
+export async function getUserPlaylist(uid: number) {
+  return request('/user/playlist', { uid })
+}
+
+// 歌单详情
+export async function getPlaylistDetail(id: number) {
+  return request('/playlist/detail', { id })
+}
+
+// 歌单歌曲列表
+export async function getPlaylistTracks(id: number, limit = 30, offset = 0) {
+  return request('/playlist/track/all', { id, limit, offset })
+}
+
+// 收藏/取消收藏歌单（t=1 收藏, t=2 取消收藏）
+export async function subscribePlaylist(id: number, t: 1 | 2) {
+  return request('/playlist/subscribe', { id, t, type: 1 })
 }
