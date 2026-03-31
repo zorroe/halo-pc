@@ -22,7 +22,7 @@ export interface UserInfo {
 
 export const useUserStore = defineStore('user', () => {
   const userInfo = useLocalStorage<UserInfo | null>('halo_user', null)
-  const isLoggedIn = computed(() => !!userInfo.value?.id)
+  const isLoggedIn = computed(() => !!userInfo.value?.userId)
 
   function setLogin(profile: UserInfo, cookie?: string) {
     userInfo.value = profile
