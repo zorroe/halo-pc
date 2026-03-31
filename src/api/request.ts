@@ -21,12 +21,17 @@ export function clearCookie() {
 const instance = axios.create({
   baseURL: MUSIC_API_PREFIX,
   timeout: 10000,
-  withCredentials: true, // 让浏览器自动携带 cookie（跨域时生效）
+  withCredentials: true, // 跨域携带 cookie
 })
 
-// 请求拦截器：POST body 自动追加时间戳
+// 请求拦截器：POST body 追加时间戳，同时把 cookie 通过 header 传给后端
 instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // 所有 POST 请求自动在 data 中追加时间戳
+  const cookie = getCookie()
+  if (cookie) {
+    // 用自定义 header 传 cookie（避免浏览器安全限制）
+    config.headers['X-Cookie'] = cookie
+  }
+
   if (config.method?.toLowerCase() === 'post') {
     const data = config.data || {}
     config.data = {
@@ -43,14 +48,12 @@ instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 instance.interceptors.response.use((res: AxiosResponse) => {
   const headers = res.headers
 
-  // 从响应 header 的 set-cookie 取
   const sc = headers['set-cookie']
   if (sc) {
     const cookieStr = Array.isArray(sc) ? sc[0].split(';')[0] : String(sc).split(';')[0]
     saveCookie(cookieStr)
   }
 
-  // 同时兼容 body 中返回的 cookie（如 NMTID 等）
   const body = res.data as any
   if (body?.cookie) {
     const cookieStr = Array.isArray(body.cookie) ? body.cookie.join(';') : body.cookie
@@ -64,7 +67,6 @@ instance.interceptors.response.use((res: AxiosResponse) => {
   return Promise.reject(err)
 })
 
-// 统一 POST 入口
 export async function request<T = any>(path: string, data: Record<string, any> = {}): Promise<T> {
   return instance.post(path, data) as any
 }
