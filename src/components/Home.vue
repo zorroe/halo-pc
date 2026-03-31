@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getPersonalized, getRecommendSongs, getTopPlaylist } from '../api/home'
 
+const router = useRouter()
 const loading = ref(true)
 const banners = ref<any[]>([])
 const playlists = ref<any[]>([])
@@ -77,6 +79,7 @@ function formatDuration(ms: number) {
           v-for="p in playlists.slice(0, 10)"
           :key="p.id"
           class="group cursor-pointer"
+          @click="router.push(`/playlist/${p.id}`)"
         >
           <div class="aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-2.5 relative shadow-sm">
             <img
@@ -103,6 +106,7 @@ function formatDuration(ms: number) {
           v-for="p in topPlaylists.slice(0, 6)"
           :key="p.id"
           class="flex items-center gap-3.5 bg-white dark:bg-slate-900 rounded-xl p-3 cursor-pointer border border-slate-100 dark:border-slate-800 hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-200 group"
+          @click="router.push(`/playlist/${p.id}`)"
         >
           <div class="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-sm">
             <img :src="p.coverImgUrl" :alt="p.name" class="w-full h-full object-cover" />
