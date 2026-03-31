@@ -20,14 +20,11 @@ export interface UserInfo {
   [key: string]: any
 }
 
-// 用 VueUse useLocalStorage 自动持久化到 localStorage
 export const useUserStore = defineStore('user', () => {
   const userInfo = useLocalStorage<UserInfo | null>('halo_user', null)
-  const isLoggedIn = computed(() => !!userInfo.value?.userId)
+  const isLoggedIn = computed(() => !!userInfo.value?.id)
 
-  // 登录后保存
   function setLogin(profile: UserInfo, cookie?: string) {
-    console.log('Setting user info:', profile)
     userInfo.value = profile
     if (cookie) {
       const cookieStr = Array.isArray(cookie) ? cookie.join(';') : cookie
@@ -35,13 +32,13 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 清除登录状态
   function clearLogin() {
     userInfo.value = null
   }
 
-  // 用 cookie 刷新用户信息（如果 API 失败保留本地数据）
   async function checkLoginStatus() {
+    const cookie = getCookie()
+    if (!cookie) return isLoggedIn.value
     try {
       const res = await getLoginStatus()
       if (res.data?.profile) {

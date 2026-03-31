@@ -28,7 +28,7 @@ onMounted(async () => {
     ])
 
     if (likeRes.code === 200) {
-      likeSongs.value = likeRes.data || []
+      likeSongs.value = likeRes.songs || []
     }
     if (playlistRes.code === 200) {
       const all = playlistRes.playlist || []
