@@ -53,16 +53,16 @@ function startQrPolling() {
       const code = res.code
       if (code === 803) {
         qrStatusText.value = '登录成功'
-        clearInterval(qrPoller!)
-        qrPoller = null
+        stopQrPolling() // 立即停止轮询，防止重复触发
+        // profile 可能不在响应里，cookie 一定在，都存入
+        setLogin(res.profile || {}, res.cookie)
+        // 短暂展示成功后跳转
         setTimeout(() => {
-          if (res.profile) setLogin(res.profile, res.cookie)
           router.push('/home')
-        }, 600)
+        }, 300)
       } else if (code === 800) {
         qrStatusText.value = '二维码已过期，点击重新生成'
-        clearInterval(qrPoller!)
-        qrPoller = null
+        stopQrPolling()
         qrImageUrl.value = ''
       } else if (code === 801) {
         qrStatusText.value = '请打开网易云音乐扫码'

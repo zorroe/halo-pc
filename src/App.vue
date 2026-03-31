@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { isLoggedIn, checkLoginStatus } from './composables/useLogin'
+import { isLoggedIn, checkLoginStatus, userInfo } from './composables/useLogin'
 
 const router = useRouter()
 const route = useRoute()
@@ -18,8 +18,11 @@ onMounted(async () => {
   }
 })
 
-watch(isLoggedIn, (val) => {
-  if (val) router.push('/home')
+// 仅在 ready 后且 isLoggedIn 变为 true 时跳转，避免初始 mount 时的无效触发
+watch([() => isLoggedIn.value, ready], ([loggedIn, rdy]) => {
+  if (rdy && loggedIn && route.path === '/login') {
+    router.push('/home')
+  }
 })
 
 function toggleDark() {
@@ -63,7 +66,12 @@ function toggleDark() {
                 class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 group"
               >
                 <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-transparent group-hover:border-rose-300 dark:group-hover:border-rose-500 transition-all duration-200 shadow-sm bg-slate-200 dark:bg-slate-700">
-                  <div v-if="false" class="w-full h-full object-cover" />
+                  <img
+                    v-if="userInfo?.avatarUrl"
+                    :src="userInfo.avatarUrl"
+                    :alt="userInfo.nickname"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
                 <span class="text-sm text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">个人中心</span>
               </router-link>
