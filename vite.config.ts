@@ -7,21 +7,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     proxy: {
-      '/login': {
+      // 音乐 API 统一前缀 /api/music 转发到后端服务
+      '/api/music': {
         target: 'http://192.168.1.101:19876',
         changeOrigin: true,
-      },
-      '/sms': {
-        target: 'http://192.168.1.101:19876',
-        changeOrigin: true,
-      },
-      '/captcha': {
-        target: 'http://192.168.1.101:19876',
-        changeOrigin: true,
-      },
-      '/logout': {
-        target: 'http://192.168.1.101:19876',
-        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/music/, ''), // 去掉前缀再转发
       },
     },
   },

@@ -1,6 +1,9 @@
 import axios from 'axios'
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
+// 音乐 API 统一前缀
+const MUSIC_API_PREFIX = '/api/music'
+
 // 封装 axios，带 cookie 持久化
 // 所有请求统一使用 POST，body 中自动附加时间戳字段
 const COOKIE_KEY = 'ncm_cookie'
@@ -18,6 +21,7 @@ export function clearCookie() {
 }
 
 const instance = axios.create({
+  baseURL: MUSIC_API_PREFIX,
   timeout: 10000,
 })
 
@@ -37,7 +41,7 @@ instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     }
   }
 
-  console.log(`[API] POST ${config.url}`, config.data)
+  console.log(`[API] POST ${config.baseURL}${config.url}`, config.data)
   return config
 })
 
@@ -66,7 +70,7 @@ instance.interceptors.response.use((res: AxiosResponse) => {
   return Promise.reject(err)
 })
 
-// 统一 POST 入口
+// 统一 POST 入口（路径不带前缀，拦截器自动加上）
 export async function request<T = any>(path: string, data: Record<string, any> = {}): Promise<T> {
   return instance.post(path, data) as any
 }
