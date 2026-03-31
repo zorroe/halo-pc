@@ -14,15 +14,13 @@ const createdPlaylists = ref<any[]>([])
 const likedPlaylists = ref<any[]>([])
 
 onMounted(async () => {
-  // 先获取登录状态（防止刷新后 userInfo 为空）
   await userStore.checkLoginStatus()
-
-  if (!userStore.userInfo?.id) {
+  if (!userStore.isLoggedIn) {
     router.push('/login')
     return
   }
 
-  const uid = userStore.userInfo.id
+  const uid = userStore.userInfo?.userId
   try {
     const [likeRes, playlistRes] = await Promise.all([
       getLikeList(uid),
