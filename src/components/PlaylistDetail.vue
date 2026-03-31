@@ -37,6 +37,7 @@ async function loadPlaylist() {
       playlist.value = detailRes.playlist
       subscribed.value = detailRes.playlist.subscribed
       totalTracks.value = detailRes.playlist.trackCount || 0
+      console.log('[PlaylistDetail] trackCount:', detailRes.playlist.trackCount, 'totalPages:', totalPages.value)
     }
   } catch (e) {
     console.error('Load playlist failed:', e)
