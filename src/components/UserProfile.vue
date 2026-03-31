@@ -210,6 +210,7 @@ function formatDuration(ms: number) {
             v-for="p in createdPlaylists"
             :key="p.id"
             class="cursor-pointer group"
+            @click="router.push(`/playlist/${p.id}`)"
           >
             <div class="aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-2.5 relative shadow-sm">
               <img :src="p.coverImgUrl" :alt="p.name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -234,6 +235,7 @@ function formatDuration(ms: number) {
             v-for="p in likedPlaylists"
             :key="p.id"
             class="cursor-pointer group"
+            @click="router.push(`/playlist/${p.id}`)"
           >
             <div class="aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-2.5 relative shadow-sm">
               <img :src="p.coverImgUrl" :alt="p.name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
