@@ -58,8 +58,9 @@ function startQrPolling() {
         stopQrPolling() // 立即停止轮询，防止重复触发
         // profile 可能不在响应里，cookie 一定在，都存入
         userStore.setLogin(res.profile || {}, res.cookie)
-        // 短暂展示成功后跳转
-        setTimeout(() => {
+        // 短暂展示成功后跳转，checkLoginStatus 会用 cookie 刷新完整 profile
+        setTimeout(async () => {
+          await userStore.checkLoginStatus()
           router.push('/home')
         }, 300)
       } else if (code === 800) {
