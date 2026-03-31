@@ -1,4 +1,8 @@
-// 封装 fetch，带 cookie 持久化
+import axios from 'axios'
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+
+// 封装 axios，带 cookie 持久化
+// 所有请求统一使用 POST，body 中自动附加时间戳字段
 const COOKIE_KEY = 'ncm_cookie'
 
 export function getCookie() {
@@ -13,43 +17,56 @@ export function clearCookie() {
   localStorage.removeItem(COOKIE_KEY)
 }
 
-export async function request(
-  path: string,
-  data: Record<string, any> = {},
-  method: 'GET' | 'POST' = 'POST'
-) {
-  const cookie = getCookie()
-  const headers: Record<string, string> = {}
-  if (cookie) headers['Cookie'] = cookie
+const instance = axios.create({
+  timeout: 10000,
+})
 
-  // GET 请求用 query 参数，POST 请求用 JSON body
-  let url = path
-  if (method === 'GET' && Object.keys(data).length > 0) {
-    const params = new URLSearchParams(
-      Object.entries(data).map(([k, v]) => [k, String(v)])
-    )
-    url += '?' + params.toString()
-  } else if (method === 'POST') {
-    headers['Content-Type'] = 'application/json'
+// 请求拦截器：自动在 body 中注入时间戳字段
+instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const cookie = getCookie()
+  if (cookie) {
+    config.headers['Cookie'] = cookie
   }
 
-  console.log(`[API] ${method} ${url}`, method === 'POST' ? data : '')
+  // 所有 POST 请求自动在 data 中追加时间戳
+  if (config.method?.toLowerCase() === 'post') {
+    const data = config.data || {}
+    config.data = {
+      ...data,
+      timestamp: Date.now(),
+    }
+  }
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    ...(method === 'POST' ? { body: JSON.stringify(data) } : {}),
-  })
+  console.log(`[API] POST ${config.url}`, config.data)
+  return config
+})
 
-  const json = await res.json()
-  console.log(`[API] response ${path}:`, json)
+// 响应拦截器：自动保存 cookie，直接返回 data 部分
+instance.interceptors.response.use((res: AxiosResponse) => {
+  const headers = res.headers
 
-  // 如果响应头里有 set-cookie，保存起来
-  const sc = res.headers.get('set-cookie')
+  // 从响应 header 的 set-cookie 取
+  const sc = headers['set-cookie']
   if (sc) {
-    const cookieStr = sc.split(';')[0]
+    const cookieStr = Array.isArray(sc) ? sc[0].split(';')[0] : String(sc).split(';')[0]
     saveCookie(cookieStr)
   }
 
-  return json
+  // 同时兼容 body 中返回的 cookie（如 NMTID 等）
+  const body = res.data as any
+  if (body?.cookie) {
+    const cookieStr = Array.isArray(body.cookie) ? body.cookie.join(';') : body.cookie
+    saveCookie(cookieStr)
+  }
+
+  console.log(`[API] response ${res.config.url}:`, body)
+  return body
+}, (err) => {
+  console.error(`[API] error ${err.config?.url}:`, err.message)
+  return Promise.reject(err)
+})
+
+// 统一 POST 入口
+export async function request<T = any>(path: string, data: Record<string, any> = {}): Promise<T> {
+  return instance.post(path, data) as any
 }

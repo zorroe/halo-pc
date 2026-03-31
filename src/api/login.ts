@@ -1,4 +1,4 @@
-import { saveCookie, clearCookie, request } from './request'
+import { clearCookie, request } from './request'
 
 // 发送验证码
 export async function sendCaptcha(phone: string) {
@@ -9,11 +9,6 @@ export async function sendCaptcha(phone: string) {
 export async function loginWithCaptcha(phone: string, captcha: string) {
   await request('/captcha/verify', { phone, captcha, ctcode: 86 })
   const res = await request('/login/cellphone', { phone, captcha, countrycode: 86 })
-  // 登录成功时 result.cookie 字段里有 cookie
-  if (res.code === 200 && res.cookie) {
-    const cookieStr = Array.isArray(res.cookie) ? res.cookie.join(';') : res.cookie
-    saveCookie(cookieStr)
-  }
   return res
 }
 
@@ -27,9 +22,9 @@ export async function getQrImage(key: string) {
   return request('/login/qr/create', { key, qrimg: 1 })
 }
 
-// 检查二维码扫码状态 (GET, query参数)
+// 检查二维码扫码状态
 export async function checkQrStatus(key: string) {
-  return request('/login/qr/check', { key }, 'GET')
+  return request('/login/qr/check', { key })
 }
 
 // 获取登录状态
