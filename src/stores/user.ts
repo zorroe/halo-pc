@@ -20,18 +20,19 @@ export interface UserInfo {
 }
 
 export const useUserStore = defineStore('user', () => {
-  const userInfo = ref<UserInfo | null>(null)
-  const isLoggedIn = computed(() => !!userInfo.value?.id)
-
-  // 从 localStorage 恢复
+  // 从 localStorage 恢复（初始化时即恢复，不依赖 checkLoginStatus）
   const stored = localStorage.getItem('halo_user')
+  let initialUser: UserInfo | null = null
   if (stored) {
     try {
-      userInfo.value = JSON.parse(stored)
+      initialUser = JSON.parse(stored)
     } catch (e) {
       localStorage.removeItem('halo_user')
     }
   }
+
+  const userInfo = ref<UserInfo | null>(initialUser)
+  const isLoggedIn = computed(() => !!userInfo.value?.id)
 
   // 登录后保存
   function setLogin(profile: UserInfo, cookie?: string) {
@@ -49,12 +50,12 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('halo_user')
   }
 
-  // 检查登录状态（带 cookie 刷新用户信息）
+  // 检查登录状态（用 cookie 刷新用户信息，如果 API 失败不清空本地数据）
   async function checkLoginStatus() {
     const cookie = getCookie()
     if (!cookie) {
-      userInfo.value = null
-      return false
+      // 没有 cookie 才认为未登录
+      return isLoggedIn.value
     }
     try {
       const res = await getLoginStatus()
@@ -66,8 +67,8 @@ export const useUserStore = defineStore('user', () => {
     } catch (e) {
       console.error('Check login status failed:', e)
     }
-    userInfo.value = null
-    return false
+    // API 失败或无 profile 时，不清空本地已有的登录数据
+    return isLoggedIn.value
   }
 
   return {
