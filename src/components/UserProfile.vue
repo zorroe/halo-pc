@@ -35,7 +35,8 @@ onMounted(async () => {
     const detailRes = await getUserDetail(uid)
     if (detailRes.code === 200) {
       userDetail.value = detailRes
-      console.log('[Profile] user detail:', JSON.stringify(detailRes).slice(0, 400))
+      console.log('[Profile] user detail:', JSON.stringify(detailRes))
+      console.log('[Profile] follows:', detailRes.profile?.follows, 'followeds:', detailRes.profile?.followeds, 'level:', detailRes.level, 'province:', detailRes.profile?.province, 'city:', detailRes.profile?.city)
     }
 
     const playlistRes = await getUserPlaylist(uid)
