@@ -34,6 +34,7 @@ onMounted(async () => {
       const all = playlistRes.playlist || []
       createdPlaylists.value = all.filter((p: any) => String(p.userId) === String(uid))
       likedPlaylists.value = all.filter((p: any) => String(p.userId) !== String(uid))
+      console.log('[Profile] created playlists:', JSON.stringify(all.map((p: any) => ({ name: p.name, id: p.id, trackCount: p.trackCount }))))
       // 找到"我喜欢的音乐"歌单
       const likePlaylist = all.find((p: any) => String(p.userId) === String(uid) && p.name === '我喜欢的音乐')
       if (likePlaylist) {
@@ -41,6 +42,8 @@ onMounted(async () => {
         likeTotalCount.value = likePlaylist.trackCount || 0
         console.log('[Profile] like playlist id:', likePlaylistId.value, 'trackCount:', likeTotalCount.value)
         await loadLikeSongs(1)
+      } else {
+        console.log('[Profile] like playlist NOT found by name, checking playlist names:', all.filter((p: any) => String(p.userId) === String(uid)).map((p: any) => p.name))
       }
     }
   } catch (e) {
