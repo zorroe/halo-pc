@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { logout } from '../api/login'
-import { getLikeList, getUserPlaylist } from '../api/home'
+import { getUserPlaylist, getPlaylistTracks } from '../api/home'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -12,6 +12,12 @@ const loading = ref(true)
 const likeSongs = ref<any[]>([])
 const createdPlaylists = ref<any[]>([])
 const likedPlaylists = ref<any[]>([])
+
+// 分页
+const PAGE_SIZE = 30
+const likeCurrentPage = ref(1)
+const likeTotalCount = ref(0)
+const likeLoadingMore = ref(false)
 
 onMounted(async () => {
   await userStore.checkLoginStatus()
@@ -22,24 +28,63 @@ onMounted(async () => {
 
   const uid = userStore.userInfo?.userId
   try {
-    const [likeRes, playlistRes] = await Promise.all([
-      getLikeList(uid),
+    const [playlistRes] = await Promise.all([
       getUserPlaylist(uid),
     ])
 
-    if (likeRes.code === 200) {
-      likeSongs.value = likeRes.songs || []
-    }
     if (playlistRes.code === 200) {
       const all = playlistRes.playlist || []
       createdPlaylists.value = all.filter((p: any) => String(p.userId) === String(uid))
       likedPlaylists.value = all.filter((p: any) => String(p.userId) !== String(uid))
+      // 找到"我喜欢的音乐"歌单
+      const likePlaylist = all.find((p: any) => String(p.userId) === String(uid) && p.name === '我喜欢的音乐')
+      if (likePlaylist) {
+        likeTotalCount.value = likePlaylist.trackCount || 0
+        await loadLikeSongs(1)
+      }
     }
   } catch (e) {
     console.error('Load profile data failed:', e)
   }
   loading.value = false
 })
+
+async function loadLikeSongs(page: number) {
+  const likePlaylist = createdPlaylists.value.find((p: any) => p.name === '我喜欢的音乐')
+  if (!likePlaylist) return
+  
+  if (page === 1) {
+    loading.value = true
+  } else {
+    likeLoadingMore.value = true
+  }
+  likeCurrentPage.value = page
+  
+  try {
+    const offset = (page - 1) * PAGE_SIZE
+    const res = await getPlaylistTracks(likePlaylist.id, PAGE_SIZE, offset)
+    if (res.code === 200) {
+      likeSongs.value = res.songs || []
+    }
+  } catch (e) {
+    console.error('Load like songs failed:', e)
+  }
+  loading.value = false
+  likeLoadingMore.value = false
+}
+
+async function prevLikePage() {
+  if (likeCurrentPage.value > 1) {
+    await loadLikeSongs(likeCurrentPage.value - 1)
+  }
+}
+
+async function nextLikePage() {
+  const totalPages = Math.ceil(likeTotalCount.value / PAGE_SIZE)
+  if (likeCurrentPage.value < totalPages) {
+    await loadLikeSongs(likeCurrentPage.value + 1)
+  }
+}
 
 const genderText = () => {
   if (userStore.userInfo?.gender === 1) return '男'
@@ -160,7 +205,7 @@ function formatDuration(ms: number) {
 
       <!-- 我喜欢的歌曲 -->
       <section>
-        <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-5">我喜欢的歌曲 <span class="text-sm font-normal text-slate-400">{{ likeSongs.length }} 首</span></h2>
+        <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-5">我喜欢的歌曲 <span class="text-sm font-normal text-slate-400">{{ likeTotalCount }} 首</span></h2>
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
           <table class="w-full">
             <thead>
@@ -174,11 +219,11 @@ function formatDuration(ms: number) {
             </thead>
             <tbody>
               <tr
-                v-for="(s, i) in likeSongs.slice(0, 20)"
+                v-for="(s, i) in likeSongs"
                 :key="s.id"
                 class="group border-b border-slate-50 dark:border-slate-800 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <td class="py-3.5 px-5 text-sm text-slate-300 dark:text-slate-600 group-hover:text-rose-400 transition-colors">{{ i + 1 }}</td>
+                <td class="py-3.5 px-5 text-sm text-slate-300 dark:text-slate-600 group-hover:text-rose-400 transition-colors">{{ (likeCurrentPage - 1) * PAGE_SIZE + i + 1 }}</td>
                 <td class="py-3.5 px-2">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-sm">
@@ -193,11 +238,26 @@ function formatDuration(ms: number) {
               </tr>
             </tbody>
           </table>
-          <div v-if="likeSongs.length > 20" class="text-center py-3 text-sm text-slate-400">
-            还有 {{ likeSongs.length - 20 }} 首歌曲...
-          </div>
+          <!-- 分页导航 -->
           <div v-if="likeSongs.length === 0" class="text-center py-8 text-sm text-slate-400">
             暂无喜欢的歌曲
+          </div>
+          <div v-if="Math.ceil(likeTotalCount / PAGE_SIZE) > 1" class="flex items-center justify-center gap-3 py-3">
+            <button
+              :disabled="likeCurrentPage === 1 || likeLoadingMore"
+              class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              @click="prevLikePage"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 min-w-[3rem] text-center">{{ likeCurrentPage }} / {{ Math.ceil(likeTotalCount / PAGE_SIZE) }}</span>
+            <button
+              :disabled="likeCurrentPage >= Math.ceil(likeTotalCount / PAGE_SIZE) || likeLoadingMore"
+              class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              @click="nextLikePage"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
           </div>
         </div>
       </section>
