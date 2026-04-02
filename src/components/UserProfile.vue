@@ -30,15 +30,20 @@ onMounted(async () => {
 
   const uid = userStore.userInfo?.userId
   try {
-    const [likeRes, playlistRes] = await Promise.all([
-      request('/likelist', { uid }) as Promise<any>,
-      getUserPlaylist(uid),
-    ])
-
+    // 先获取喜欢的歌曲 ID 列表
+    const likeRes = await request('/likelist', { uid }) as any
+    console.log('[Profile] likelist response:', JSON.stringify(likeRes).slice(0, 200))
     if (likeRes.code === 200) {
       likeSongIds.value = likeRes.ids || []
+      if (!likeSongIds.value.length && likeRes.songs) {
+        likeSongIds.value = likeRes.songs.map((s: any) => s.id)
+      }
       likeTotalCount.value = likeSongIds.value.length
+      console.log('[Profile] like song ids count:', likeSongIds.value.length)
     }
+
+    // 再获取用户歌单
+    const playlistRes = await getUserPlaylist(uid)
     if (playlistRes.code === 200) {
       const all = playlistRes.playlist || []
       createdPlaylists.value = all.filter((p: any) => String(p.userId) === String(uid))
@@ -62,6 +67,7 @@ async function loadLikeSongs(page: number) {
 
   try {
     const ids = likeSongIds.value.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    console.log('[Profile] loadLikeSongs page', page, 'ids:', ids.length, 'slice:', (page - 1) * PAGE_SIZE, '-', page * PAGE_SIZE)
     if (ids.length > 0) {
       const res = await getSongDetail(ids)
       if (res.code === 200) {
