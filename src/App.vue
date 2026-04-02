@@ -7,11 +7,12 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const ready = ref(false)
-const dark = ref(false)
+const dark = ref(localStorage.getItem('darkMode') === 'true')
 
 const showHeader = computed(() => route.path !== '/login')
 
 onMounted(async () => {
+  document.documentElement.classList.toggle('dark', dark.value)
   await userStore.checkLoginStatus()
   ready.value = true
   if (userStore.isLoggedIn) {
@@ -28,6 +29,7 @@ watch([() => userStore.isLoggedIn, ready], ([loggedIn, rdy]) => {
 function toggleDark() {
   dark.value = !dark.value
   document.documentElement.classList.toggle('dark', dark.value)
+  localStorage.setItem('darkMode', String(dark.value))
 }
 </script>
 
