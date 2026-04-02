@@ -61,7 +61,15 @@ function toggleDark() {
             </router-link>
 
             <!-- Right actions -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1">
+              <!-- 歌手 -->
+              <router-link
+                to="/artist"
+                class="px-3 py-1.5 rounded-lg text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                歌手
+              </router-link>
+
               <!-- Avatar -->
               <router-link
                 to="/profile"

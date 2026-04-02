@@ -59,3 +59,28 @@ export async function getPlaylistTracks(id: number, limit = 30, offset = 0) {
 export async function subscribePlaylist(id: number, t: 1 | 2) {
   return request('/playlist/subscribe', { id, t, type: 1 })
 }
+
+// 歌手分类列表
+export async function getArtistList(cat = 1001, limit = 30, offset = 0) {
+  return request('/artist/list', { cat, limit, offset })
+}
+
+// 歌手详情（包含热门歌曲）
+export async function getArtistDetail(id: number) {
+  return request('/artists', { id })
+}
+
+// 歌手专辑
+export async function getArtistAlbum(id: number, limit = 20, offset = 0) {
+  return request('/artist/album', { id, limit, offset })
+}
+
+// 歌手 MV
+export async function getArtistMv(id: number) {
+  return request('/artist/mv', { id })
+}
+
+// 相似歌手
+export async function getSimilarArtists(id: number) {
+  return request('/simi/artist', { id })
+}
