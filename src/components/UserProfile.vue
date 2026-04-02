@@ -127,7 +127,7 @@ function formatDuration(ms: number) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-// 省份 ID 到中文名的映射（只保留唯一 key）
+// 省份 ID 到中文名的映射（网易云 6 位码）
 const provinceMap: Record<number, string> = {
   110000: '北京', 120000: '天津', 130000: '河北', 140000: '山西', 150000: '内蒙古',
   210000: '辽宁', 220000: '吉林', 230000: '黑龙江',
@@ -140,7 +140,7 @@ const provinceMap: Record<number, string> = {
 
 function getRegionText(provinceCode?: number, cityCode?: number) {
   if (!provinceCode) return '-'
-  const provinceName = provinceMap[provinceCode] || provinceMap[Math.floor(provinceCode / 1000)] || String(provinceCode)
+  const provinceName = provinceMap[provinceCode] || String(provinceCode)
   if (!cityCode) return provinceName
   return `${provinceName} · ${cityCode}`
 }
@@ -185,22 +185,22 @@ function getRegionText(provinceCode?: number, cityCode?: number) {
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-1">
             <h1 class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.nickname || '未登录' }}</h1>
-            <span class="text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Lv.{{ userDetail?.level || userStore.userInfo?.level || '-' }}</span>
+            <span class="text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Lv.{{ userDetail?.level || '-' }}</span>
           </div>
           <p v-if="userStore.userInfo?.signature" class="text-sm text-slate-400 mt-2 leading-relaxed">{{ userStore.userInfo.signature }}</p>
 
           <!-- Stats -->
           <div class="flex gap-10 mt-5">
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.follows || userStore.userInfo?.follows || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.profile?.follows || 0 }}</p>
               <p class="text-sm text-slate-400">关注</p>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.followeds || userStore.userInfo?.followeds || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.profile?.followeds || 0 }}</p>
               <p class="text-sm text-slate-400">粉丝</p>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.playlistCount || userStore.userInfo?.playlistCount || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.profile?.playlistCount || 0 }}</p>
               <p class="text-sm text-slate-400">歌单</p>
             </div>
           </div>
@@ -218,7 +218,7 @@ function getRegionText(provinceCode?: number, cityCode?: number) {
           </div>
           <div>
             <span class="text-slate-400">地区</span>
-            <span class="ml-3 text-slate-700 dark:text-slate-200">{{ getRegionText(userDetail?.profile?.province ?? userStore.userInfo?.province, userDetail?.profile?.city ?? userStore.userInfo?.city) }}</span>
+            <span class="ml-3 text-slate-700 dark:text-slate-200">{{ getRegionText(userDetail?.profile?.province, userDetail?.profile?.city) }}</span>
           </div>
           <div class="pt-2">
             <button
