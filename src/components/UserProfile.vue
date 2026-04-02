@@ -3,17 +3,16 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { logout } from '../api/login'
-import { request } from '../api/request'
-import { getSongDetail, getUserPlaylist } from '../api/home'
+import { getPlaylistTracks, getUserPlaylist } from '../api/home'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(true)
-const likeSongIds = ref<number[]>([])
 const likeSongs = ref<any[]>([])
 const createdPlaylists = ref<any[]>([])
 const likedPlaylists = ref<any[]>([])
+const likePlaylistId = ref<number | null>(null)
 
 // 分页
 const PAGE_SIZE = 10
@@ -30,27 +29,20 @@ onMounted(async () => {
 
   const uid = userStore.userInfo?.userId
   try {
-    // 先获取喜欢的歌曲 ID 列表
-    const likeRes = await request('/likelist', { uid }) as any
-    console.log('[Profile] likelist response:', JSON.stringify(likeRes).slice(0, 200))
-    if (likeRes.code === 200) {
-      likeSongIds.value = likeRes.ids || []
-      if (!likeSongIds.value.length && likeRes.songs) {
-        likeSongIds.value = likeRes.songs.map((s: any) => s.id)
-      }
-      likeTotalCount.value = likeSongIds.value.length
-      console.log('[Profile] like song ids count:', likeSongIds.value.length)
-    }
-
-    // 再获取用户歌单
     const playlistRes = await getUserPlaylist(uid)
     if (playlistRes.code === 200) {
       const all = playlistRes.playlist || []
       createdPlaylists.value = all.filter((p: any) => String(p.userId) === String(uid))
       likedPlaylists.value = all.filter((p: any) => String(p.userId) !== String(uid))
+      // 找到"我喜欢的音乐"歌单
+      const likePlaylist = all.find((p: any) => String(p.userId) === String(uid) && p.name === '我喜欢的音乐')
+      if (likePlaylist) {
+        likePlaylistId.value = likePlaylist.id
+        likeTotalCount.value = likePlaylist.trackCount || 0
+        console.log('[Profile] like playlist id:', likePlaylistId.value, 'trackCount:', likeTotalCount.value)
+        await loadLikeSongs(1)
+      }
     }
-
-    await loadLikeSongs(1)
   } catch (e) {
     console.error('Load profile data failed:', e)
   }
@@ -58,6 +50,7 @@ onMounted(async () => {
 })
 
 async function loadLikeSongs(page: number) {
+  if (!likePlaylistId.value) return
   if (page === 1) {
     loading.value = true
   } else {
@@ -66,15 +59,11 @@ async function loadLikeSongs(page: number) {
   likeCurrentPage.value = page
 
   try {
-    const ids = likeSongIds.value.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-    console.log('[Profile] loadLikeSongs page', page, 'ids:', ids.length, 'slice:', (page - 1) * PAGE_SIZE, '-', page * PAGE_SIZE, '| totalIds:', likeSongIds.value.length)
-    if (ids.length > 0) {
-      const res = await getSongDetail(ids)
-      if (res.code === 200) {
-        likeSongs.value = res.songs || []
-      }
-    } else {
-      likeSongs.value = []
+    const offset = (page - 1) * PAGE_SIZE
+    const res = await getPlaylistTracks(likePlaylistId.value, PAGE_SIZE, offset)
+    if (res.code === 200) {
+      likeSongs.value = res.songs || []
+      console.log('[Profile] loadLikeSongs page', page, 'got songs:', likeSongs.value.length)
     }
   } catch (e) {
     console.error('Load like songs failed:', e)
@@ -90,7 +79,6 @@ async function prevLikePage() {
 }
 
 async function nextLikePage() {
-  console.log('[Profile] nextLikePage called, currentPage:', likeCurrentPage.value, 'ids length:', likeSongIds.value.length)
   const totalPages = Math.ceil(likeTotalCount.value / PAGE_SIZE)
   if (likeCurrentPage.value < totalPages) {
     await loadLikeSongs(likeCurrentPage.value + 1)
