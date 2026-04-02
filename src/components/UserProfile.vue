@@ -67,7 +67,7 @@ async function loadLikeSongs(page: number) {
 
   try {
     const ids = likeSongIds.value.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-    console.log('[Profile] loadLikeSongs page', page, 'ids:', ids.length, 'slice:', (page - 1) * PAGE_SIZE, '-', page * PAGE_SIZE)
+    console.log('[Profile] loadLikeSongs page', page, 'ids:', ids.length, 'slice:', (page - 1) * PAGE_SIZE, '-', page * PAGE_SIZE, '| totalIds:', likeSongIds.value.length)
     if (ids.length > 0) {
       const res = await getSongDetail(ids)
       if (res.code === 200) {
@@ -90,6 +90,7 @@ async function prevLikePage() {
 }
 
 async function nextLikePage() {
+  console.log('[Profile] nextLikePage called, currentPage:', likeCurrentPage.value, 'ids length:', likeSongIds.value.length)
   const totalPages = Math.ceil(likeTotalCount.value / PAGE_SIZE)
   if (likeCurrentPage.value < totalPages) {
     await loadLikeSongs(likeCurrentPage.value + 1)
