@@ -3,18 +3,20 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { logout } from '../api/login'
-import { getUserPlaylist, getPlaylistTracks } from '../api/home'
+import { request } from '../api/request'
+import { getSongDetail, getUserPlaylist } from '../api/home'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(true)
+const likeSongIds = ref<number[]>([])
 const likeSongs = ref<any[]>([])
 const createdPlaylists = ref<any[]>([])
 const likedPlaylists = ref<any[]>([])
 
 // 分页
-const PAGE_SIZE = 30
+const PAGE_SIZE = 10
 const likeCurrentPage = ref(1)
 const likeTotalCount = ref(0)
 const likeLoadingMore = ref(false)
@@ -28,21 +30,22 @@ onMounted(async () => {
 
   const uid = userStore.userInfo?.userId
   try {
-    const [playlistRes] = await Promise.all([
+    const [likeRes, playlistRes] = await Promise.all([
+      request('/likelist', { uid }) as Promise<any>,
       getUserPlaylist(uid),
     ])
 
+    if (likeRes.code === 200) {
+      likeSongIds.value = likeRes.ids || []
+      likeTotalCount.value = likeSongIds.value.length
+    }
     if (playlistRes.code === 200) {
       const all = playlistRes.playlist || []
       createdPlaylists.value = all.filter((p: any) => String(p.userId) === String(uid))
       likedPlaylists.value = all.filter((p: any) => String(p.userId) !== String(uid))
-      // 找到"我喜欢的音乐"歌单
-      const likePlaylist = all.find((p: any) => String(p.userId) === String(uid) && p.name === '我喜欢的音乐')
-      if (likePlaylist) {
-        likeTotalCount.value = likePlaylist.trackCount || 0
-        await loadLikeSongs(1)
-      }
     }
+
+    await loadLikeSongs(1)
   } catch (e) {
     console.error('Load profile data failed:', e)
   }
@@ -50,21 +53,22 @@ onMounted(async () => {
 })
 
 async function loadLikeSongs(page: number) {
-  const likePlaylist = createdPlaylists.value.find((p: any) => p.name === '我喜欢的音乐')
-  if (!likePlaylist) return
-  
   if (page === 1) {
     loading.value = true
   } else {
     likeLoadingMore.value = true
   }
   likeCurrentPage.value = page
-  
+
   try {
-    const offset = (page - 1) * PAGE_SIZE
-    const res = await getPlaylistTracks(likePlaylist.id, PAGE_SIZE, offset)
-    if (res.code === 200) {
-      likeSongs.value = res.songs || []
+    const ids = likeSongIds.value.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    if (ids.length > 0) {
+      const res = await getSongDetail(ids)
+      if (res.code === 200) {
+        likeSongs.value = res.songs || []
+      }
+    } else {
+      likeSongs.value = []
     }
   } catch (e) {
     console.error('Load like songs failed:', e)
