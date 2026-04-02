@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { logout } from '../api/login'
 import { getPlaylistTracks, getUserPlaylist } from '../api/home'
+import { getUserDetail } from '../api/login'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -13,6 +14,7 @@ const likeSongs = ref<any[]>([])
 const createdPlaylists = ref<any[]>([])
 const likedPlaylists = ref<any[]>([])
 const likePlaylistId = ref<number | null>(null)
+const userDetail = ref<any>(null)
 
 // 分页
 const PAGE_SIZE = 10
@@ -29,23 +31,26 @@ onMounted(async () => {
 
   const uid = userStore.userInfo?.userId
   try {
+    // 获取用户详情（等级、关注、粉丝等）
+    const detailRes = await getUserDetail(uid)
+    if (detailRes.code === 200) {
+      userDetail.value = detailRes
+      console.log('[Profile] user detail level:', detailRes.level, 'follows:', detailRes.follows, 'followeds:', detailRes.followeds)
+    }
+
     const playlistRes = await getUserPlaylist(uid)
     if (playlistRes.code === 200) {
       const all = playlistRes.playlist || []
       createdPlaylists.value = all.filter((p: any) => String(p.userId) === String(uid))
       likedPlaylists.value = all.filter((p: any) => String(p.userId) !== String(uid))
-      console.log('[Profile] created playlists:', JSON.stringify(all.map((p: any) => ({ name: p.name, id: p.id, trackCount: p.trackCount }))))
-      // 找到"我喜欢的音乐"歌单（specialType=5 是喜欢歌单的标识）
+      // 找到"我喜欢的音乐"歌单
       const likePlaylist = all.find((p: any) =>
         String(p.userId) === String(uid) && (p.specialType === 5 || (p.name && p.name.includes('喜欢的音乐')))
       )
       if (likePlaylist) {
         likePlaylistId.value = likePlaylist.id
         likeTotalCount.value = likePlaylist.trackCount || 0
-        console.log('[Profile] like playlist found:', likePlaylist.name, 'id:', likePlaylistId.value, 'trackCount:', likeTotalCount.value)
         await loadLikeSongs(1)
-      } else {
-        console.log('[Profile] like playlist NOT found')
       }
     }
   } catch (e) {
@@ -120,6 +125,24 @@ function formatDuration(ms: number) {
   const s = Math.floor((ms % 60000) / 1000)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
+
+// 省份 ID 到中文名的映射（只保留唯一 key）
+const provinceMap: Record<number, string> = {
+  110000: '北京', 120000: '天津', 130000: '河北', 140000: '山西', 150000: '内蒙古',
+  210000: '辽宁', 220000: '吉林', 230000: '黑龙江',
+  310000: '上海', 320000: '江苏', 330000: '浙江', 340000: '安徽', 350000: '福建', 360000: '江西', 370000: '山东',
+  410000: '河南', 420000: '湖北', 430000: '湖南', 440000: '广东', 450000: '广西', 460000: '海南',
+  500000: '重庆', 510000: '四川', 520000: '贵州', 530000: '云南', 540000: '西藏',
+  610000: '陕西', 620000: '甘肃', 630000: '青海', 640000: '宁夏', 650000: '新疆',
+  710000: '台湾', 810000: '香港', 820000: '澳门',
+}
+
+function getRegionText(provinceCode?: number, cityCode?: number) {
+  if (!provinceCode) return '-'
+  const provinceName = provinceMap[provinceCode] || provinceMap[Math.floor(provinceCode / 1000)] || String(provinceCode)
+  if (!cityCode) return provinceName
+  return `${provinceName} · ${cityCode}`
+}
 </script>
 
 <template>
@@ -147,7 +170,7 @@ function formatDuration(ms: number) {
       <!-- Profile Header -->
       <div class="flex gap-8 items-center">
         <!-- Avatar -->
-        <div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+        <div class="w-32 h-32 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800 flex-shrink-0">
           <img
             v-if="userStore.userInfo?.avatarUrl"
             :src="userStore.userInfo.avatarUrl"
@@ -161,22 +184,22 @@ function formatDuration(ms: number) {
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-1">
             <h1 class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.nickname || '未登录' }}</h1>
-            <span class="text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Lv.{{ userStore.userInfo?.level || '-' }}</span>
+            <span class="text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Lv.{{ userDetail?.level || userStore.userInfo?.level || '-' }}</span>
           </div>
           <p v-if="userStore.userInfo?.signature" class="text-sm text-slate-400 mt-2 leading-relaxed">{{ userStore.userInfo.signature }}</p>
 
           <!-- Stats -->
           <div class="flex gap-10 mt-5">
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.follows || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.follows || userStore.userInfo?.follows || 0 }}</p>
               <p class="text-sm text-slate-400">关注</p>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.followeds || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.followeds || userStore.userInfo?.followeds || 0 }}</p>
               <p class="text-sm text-slate-400">粉丝</p>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userStore.userInfo?.playlistCount || 0 }}</p>
+              <p class="text-2xl font-semibold text-slate-800 dark:text-white">{{ userDetail?.playlistCount || userStore.userInfo?.playlistCount || 0 }}</p>
               <p class="text-sm text-slate-400">歌单</p>
             </div>
           </div>
@@ -194,7 +217,7 @@ function formatDuration(ms: number) {
           </div>
           <div>
             <span class="text-slate-400">地区</span>
-            <span class="ml-3 text-slate-700 dark:text-slate-200">{{ userStore.userInfo?.province || '-' }} · {{ userStore.userInfo?.city || '-' }}</span>
+            <span class="ml-3 text-slate-700 dark:text-slate-200">{{ getRegionText(userDetail?.profile?.province ?? userStore.userInfo?.province, userDetail?.profile?.city ?? userStore.userInfo?.city) }}</span>
           </div>
           <div class="pt-2">
             <button

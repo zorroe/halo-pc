@@ -32,6 +32,11 @@ export async function getLoginStatus() {
   return request('/login/status', {})
 }
 
+// 获取用户详情（等级、关注、粉丝等）
+export async function getUserDetail(uid: number) {
+  return request('/user/detail', { uid })
+}
+
 // 退出登录
 export async function logout() {
   clearCookie()
