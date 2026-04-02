@@ -55,11 +55,7 @@ async function loadTracks(page: number) {
     const offset = (page - 1) * PAGE_SIZE
     const res = await getPlaylistTracks(playlistId, PAGE_SIZE, offset)
     if (res.code === 200) {
-      if (page === 1) {
-        tracks.value = res.songs || []
-      } else {
-        tracks.value = [...tracks.value, ...(res.songs || [])]
-      }
+      tracks.value = res.songs || []
     }
   } catch (e) {
     console.error('Load tracks failed:', e)
@@ -182,30 +178,7 @@ function formatDuration(ms: number) {
       <div>
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200">歌曲列表</h2>
-
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="flex items-center gap-3 text-sm">
-            <span class="text-slate-400">
-              {{ (currentPage - 1) * PAGE_SIZE + 1 }}-{{ Math.min(currentPage * PAGE_SIZE, totalTracks) }} / {{ totalTracks }}
-            </span>
-            <div class="flex items-center gap-1">
-              <button
-                :disabled="currentPage === 1 || loadingMore"
-                class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                @click="prevPage"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <span class="px-2 text-slate-600 dark:text-slate-300 min-w-[3rem] text-center">{{ currentPage }} / {{ totalPages }}</span>
-              <button
-                :disabled="currentPage === totalPages || loadingMore"
-                class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                @click="nextPage"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
-          </div>
+          <span class="text-sm text-slate-400">{{ totalTracks }} 首</span>
         </div>
 
         <!-- Loading more indicator -->
@@ -247,6 +220,25 @@ function formatDuration(ms: number) {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- 分页导航 -->
+        <div v-if="totalPages > 1" class="flex items-center justify-center gap-3 mt-6">
+          <button
+            :disabled="currentPage === 1 || loadingMore"
+            class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            @click="prevPage"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span class="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 min-w-[3rem] text-center">{{ currentPage }} / {{ totalPages }}</span>
+          <button
+            :disabled="currentPage === totalPages || loadingMore"
+            class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            @click="nextPage"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
         </div>
       </div>
 
